@@ -153,8 +153,11 @@ interval is:
 ## Project Structure
 
 ├── black_scholes.py # Black-Scholes pricer and Greeks
+
 ├── market_maker.py # AS quoting engine, order arrival models
+
 ├── simulate.py # simulation loop, four strategies, analysis, plotting
+
 └── requirements.txt
 
 ## Setup
