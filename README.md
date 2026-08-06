@@ -8,7 +8,7 @@ delta hedging or inventory management — and do they compound or cancel each ot
 ## The Four Strategies
 
 To isolate the contribution of each risk management tool, the simulator runs a 
-2x2 comparison across 1,000 simulated 30-day trading periods:
+2x2 comparison across 500 simulated 30-day trading periods:
 
 | Strategy | Quoting | Hedging |
 |---|---|---|
@@ -21,10 +21,10 @@ To isolate the contribution of each risk management tool, the simulator runs a
 
 | Strategy | Mean P&L | Std P&L | Sharpe | % Positive |
 |---|---|---|---|---|
-| Naive baseline | $[RESULT] | $[RESULT] | [RESULT] | [RESULT]% |
-| Delta hedge only | $[RESULT] | $[RESULT] | [RESULT] | [RESULT]% |
-| Inventory management only | $[RESULT] | $[RESULT] | [RESULT] | [RESULT]% |
-| Combined | $[RESULT] | $[RESULT] | [RESULT] | [RESULT]% |
+| Naive baseline | $88.19 | $48.59 | 1.815 | 94.0% |
+| Delta hedge only | $77.01 | $21.05 | 3.658 | 100.0% |
+| Inventory management only | $84.60 | $41.27 | 2.050 | 95.4% |
+| Combined | $77.48 | $21.27 | 3.722 | 100.0% |
 
 All results reported with 95% confidence intervals via CLT: CI = mean +/- 1.96 * (std / sqrt(n)).
 
@@ -32,7 +32,27 @@ All results reported with 95% confidence intervals via CLT: CI = mean +/- 1.96 *
 
 ## Key Finding
 
-[Fill in after results]
+Inventory management via Avellaneda-Stoikov quoting outperformed naive symmetric 
+quoting on a risk-adjusted basis (Sharpe 2.05 vs 1.82) with lower variance 
+($41.27 vs $48.59), consistent with the paper's finding that inventory-aware 
+quoting produces superior risk-adjusted returns.
+
+Delta hedging was the dominant risk management tool at the 30-day horizon — 
+both hedged strategies achieved Sharpe ratios above 3.6, roughly double the 
+unhedged strategies. The combined strategy performed comparably to delta hedging 
+alone (Sharpe 3.722 vs 3.658), suggesting partial redundancy between the two 
+tools at these parameters — both address directional inventory risk, and their 
+overlap limits the marginal benefit of combining them.
+
+Sharpe ratios are elevated relative to real market making due to simulation 
+idealization — delta hedge trades assume zero transaction cost and perfect 
+execution on the underlying, whereas in practice each hedge trade crosses the 
+bid-ask spread and incurs slippage, which would disproportionately reduce the 
+Sharpe of hedged strategies. Parameters were calibrated to target realistic 
+simulation behavior, targeting bid-ask spreads consistent with a 30-day ATM 
+option at 20% vol and % positive days above 85%. In a production system, 
+arrival rate parameters would be estimated from historical order book data 
+via maximum likelihood estimation on the Poisson arrival process.
 
 ## Methodology
 
@@ -93,7 +113,7 @@ The first term widens with volatility, risk aversion, and time remaining.
 The second term accounts for order arrival dynamics — how sensitive arrivals 
 are to distance from mid.
 
-Quotes are then placed symmetrically around the reservation price:
+Quotes are placed symmetrically around the reservation price:
 
     bid = r - spread / 2
     ask = r + spread / 2
@@ -118,20 +138,17 @@ At every timestep:
 
     P&L = cash + inventory * option_mid + hedge_shares * stock_price
 
-This is the honest measure of performance — it accounts for the current value 
-of all open positions, not just realized cash flows.
+This accounts for the current value of all open positions, not just realized 
+cash flows.
 
 ### Statistical Validation
 
 Results are reported with 95% confidence intervals using the Central Limit Theorem 
-(MIT 6.041, Lectures 19-20). With n = 1,000 independent simulation runs, the 
+(MIT 6.041, Lectures 19-20). With n = 500 independent simulation runs, the 
 distribution of mean P&L is approximately normal by CLT, and the confidence 
 interval is:
 
     CI = mean +/- 1.96 * (std / sqrt(n))
-
-With n = 1,000, the standard error is std / sqrt(1000) = std / 31.6, giving 
-tight confidence intervals that reliably distinguish strategies.
 
 ## Project Structure
 
@@ -156,8 +173,8 @@ python simulate.py
 | T | 30 days | Option expiry |
 | sigma | 20% | Annualized volatility |
 | mu | 5% | Stock drift |
-| gamma | 0.01 | AS risk aversion parameter |
-| kappa | 10.0 | Order arrival sensitivity to distance from mid |
+| gamma | 0.05 | AS risk aversion parameter |
+| kappa | 7.0 | Order arrival sensitivity to distance from mid |
 | A | 0.001 | Noise trader arrival rate (per minute) |
 | A_informed | 0.00005 | Informed trader arrival rate (per minute) |
 | eta | 1.2 | Informed trader price impact multiplier |
@@ -171,7 +188,7 @@ processes. The probability of at least one arrival in timestep dt is
 inter-arrival times. Noise trader arrival rate decays exponentially with 
 distance from mid; informed trader rate is constant.
 
-Central Limit Theorem (MIT 6.041 Lectures 19-20): with 1,000 independent 
+Central Limit Theorem (MIT 6.041 Lectures 19-20): with 500 independent 
 simulation runs, the distribution of mean P&L is approximately normal by CLT, 
 allowing confidence interval construction via CI = mean +/- 1.96 * std / sqrt(n).
 
