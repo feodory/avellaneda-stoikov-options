@@ -18,8 +18,8 @@ DT_YEARS  = 1/252/390           # one minute in years
 DT_SEC    = 60.0                # one minute in seconds
 
 # Market maker
-GAMMA      = 0.01
-K_PARAM    = 10.0
+GAMMA      = 0.1
+K_PARAM    = 5.0
 A          = 0.001              # noise trader arrivals per minute
 A_INFORMED = 0.00005            # informed trader arrivals per minute
 ETA        = 1.2
@@ -194,7 +194,7 @@ def analyze(pnls, strategy_name):
 
 
 if __name__ == "__main__":
-    N_SIMS = 1000   # change to 1000 for final run
+    N_SIMS = 500   # change to 1000 for final run
 
     print(f"Running {N_SIMS} simulations for each strategy...\n")
 
